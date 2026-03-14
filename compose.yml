@@ -1,0 +1,5 @@
+include:
+  - compose/compose.yml
+  - compose/compose.clickhouse.yml
+  - compose/compose.metabase.yml
+  - compose/compose.airflow.yml

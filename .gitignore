@@ -1,0 +1,12 @@
+__pycache__/
+
+.env
+
+env/
+
+airflow/logs/*
+
+clickhouse/data/
+clickhouse/logs/
+
+.DS_Store
