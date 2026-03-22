@@ -19,13 +19,11 @@ COLUMNS = (
 
 
 def localize_datetime(stamp: str) -> datetime:
-
     stamp_datetime = datetime.strptime(stamp, '%Y-%m-%d %H:%M:%S')
     return MOSCOW_TZ.localize(stamp_datetime).astimezone(UTC_TZ)
 
 
 def parse_candles_data(record: dict) -> list:
-    
     record['open'] = float(record['open'])
     record['high'] = float(record['high'])
     record['low'] = float(record['low'])
@@ -37,9 +35,7 @@ def parse_candles_data(record: dict) -> list:
 
 
 def fetch_moex_candles(security: str, start_date: str, end_date: str) -> list[dict] | None:
-    
     global COLUMNS
-
     resp = requests.get(
         f"https://iss.moex.com/iss/engines/stock/markets/shares/securities/{security}/candles.json"
         , params = {

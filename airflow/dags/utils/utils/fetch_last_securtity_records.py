@@ -2,11 +2,15 @@ from datetime import datetime
 
 
 QUERY = """
-SELECT
-    secid
-    , toTimeZone(maxMerge(last_security_record), 'Europe/Moscow') AS last_record
-FROM source.securities_last_records
-GROUP BY secid
+SELECT 
+	s.secid AS secid
+	, toTimeZone(max(begin), 'Europe/Moscow') AS last_record
+FROM 
+	source.securities AS s
+LEFT JOIN source.market_data AS md
+	ON md.secid = s.secid  
+GROUP BY 
+	secid
 """
 
 def get_last_record_for_secid(secid, last_records) -> str | None:

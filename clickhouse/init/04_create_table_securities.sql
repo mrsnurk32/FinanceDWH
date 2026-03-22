@@ -1,9 +1,31 @@
-CREATE TABLE source.securities
-(
-    secid      LowCardinality(String),
-    shortname  String,
-    isin       String,
-    lotsize    UInt32
-)
-ENGINE = MergeTree
+CREATE TABLE source.securities (
+    secid           String,
+    boardid         Nullable(String),
+    shortname       Nullable(String),
+    prevprice       Nullable(Float64),
+    lotsize         Nullable(UInt32),
+    facevalue       Nullable(Float64),
+    status          Nullable(String),
+    boardname       Nullable(String),
+    decimals        Nullable(UInt8),
+    secname         Nullable(String),
+    remarks         Nullable(String),
+    marketcode      Nullable(String),
+    instrid         Nullable(String),
+    sectorid        Nullable(String),
+    minstep         Nullable(Float64),
+    prevwaprice     Nullable(Float64),
+    faceunit        Nullable(String),
+    prevdate        Nullable(DateTime),
+    issuesize       Nullable(UInt64),
+    isin            Nullable(String),
+    latname         Nullable(String),
+    regnumber       Nullable(String),
+    prevlegalcloseprice Nullable(Float64),
+    currencyid      Nullable(String),
+    sectype         Nullable(String),
+    listlevel       Nullable(UInt8),
+    settledate      Nullable(DateTime),
+    version         DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(version)
 ORDER BY secid;

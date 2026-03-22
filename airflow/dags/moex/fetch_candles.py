@@ -15,21 +15,17 @@ import os
 import requests
 import pandas as pd
 
-from plugins.utils.generate_ranges import generate_fetch_ranges
-from plugins.utils.fetch_last_securtity_records import fetch_last_security_records, get_last_record_for_secid
-from plugins.rest_api.fetch_moex_candles import fetch_moex_candles
+from utils.utils.generate_ranges import generate_fetch_ranges
+from utils.utils.fetch_last_securtity_records import fetch_last_security_records
+from utils.clickhouse.clickhouse import get_clickhouse_client
+from utils.rest_api.fetch_moex_candles import fetch_moex_candles
+from utils.session import get_http_session
 import logging
-
-
-import clickhouse_connect
 
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_START_DATE = date(2021, 1, 1)
-
-# List of securities
-securities = ['SBER', 'GAZP', 'LKOH']  # example, can add 30 symbols
 
 default_args = {
     "owner": "airflow",
@@ -44,14 +40,31 @@ with DAG(
     description="Fetch security candles from MOEX once a day",
     schedule=None,
     catchup=False,
+    max_active_runs=1,
+    max_active_tasks=1,
 ) as dag:
 
     @task(retries=0)
-    def fetch_candles_task(security: str,client, last_record_dt:datetime):
+    def get_securities():
+        client = get_clickhouse_client()
+        securities = fetch_last_security_records(client)
+
+        # convert dict -> list of dicts for mapping
+        return [
+            {"security": sec, "last_record_dt": dt}
+            for sec, dt in securities.items()
+        ]
+
+    @task(
+        retries=0
+        , map_index_template="fetch_candles_task_{{ security }}")
+    def fetch_candles_task(security: str, last_record_dt:datetime):
         """
         Fetch candle data for a single security.
         Replace the pass statement with API call logic.
         """
+        client = get_clickhouse_client()
+        session = get_http_session()
         logger.info("fetch_candles_task: client initiated", extra={"security": security, 'last_record': last_record_dt})
 
         if last_record_dt:
@@ -68,7 +81,7 @@ with DAG(
         all_rows = []
 
         for interval in ranges:
-            data, columns = fetch_moex_candles(security, interval["start_date"], interval["end_date"])
+            data, columns = fetch_moex_candles(session, security, interval["start_date"], interval["end_date"])
             logger.info('fetch_candles_task: fetched data', extra={"security": security, "interval": interval})
 
             all_rows.extend(data)
@@ -81,23 +94,25 @@ with DAG(
         logger.info(f'{security} - data saved')
 
 
-    client = clickhouse_connect.get_client(
-        host=os.environ.get("CLICKHOUSE_HOST"),
-        port=8123,
-        username=os.environ.get("CLICKHOUSE_USER"),
-        password=os.environ.get("CLICKHOUSE_PASSWORD"),
-        database="source"
-    )
+    securities = get_securities()
 
-    last_records = fetch_last_security_records(client)
+    mapped = fetch_candles_task.expand_kwargs(securities)
+
+    securities >> mapped
+
+
+
+
+
+
+
 
     # Dynamically create tasks for each security
-    for security in securities:
-        logger.info(f'Security {security} before start')
-        last_record_dt = get_last_record_for_secid(security, last_records)
-        task_instance = fetch_candles_task.override(
-            task_id=f"fetch_candles_{security}",
-            pool="moex-fetch-candels-pool"
-        )(security,client, last_record_dt)
+    # for security, last_record_datetime in securities.items():
+    #     logger.info(f'Security {security} before start')
+    #     task_instance = fetch_candles_task.override(
+    #         task_id=f"fetch_candles_{security}",
+    #         pool="moex-fetch-candels-pool"
+    #     )(security,client, last_record_datetime)
 
 
