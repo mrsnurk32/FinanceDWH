@@ -99,20 +99,3 @@ with DAG(
     mapped = fetch_candles_task.expand_kwargs(securities)
 
     securities >> mapped
-
-
-
-
-
-
-
-
-    # Dynamically create tasks for each security
-    # for security, last_record_datetime in securities.items():
-    #     logger.info(f'Security {security} before start')
-    #     task_instance = fetch_candles_task.override(
-    #         task_id=f"fetch_candles_{security}",
-    #         pool="moex-fetch-candels-pool"
-    #     )(security,client, last_record_datetime)
-
-

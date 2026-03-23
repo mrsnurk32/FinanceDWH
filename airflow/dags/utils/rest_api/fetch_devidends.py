@@ -1,56 +1,34 @@
 import requests
-from datetime import datetime
-import pytz
-
-MOSCOW_TZ = pytz.timezone("Europe/Moscow")
-UTC_TZ = pytz.utc
+from utils.utils.convert_dt import localize_date
 
 COLUMNS = (
     "secid",
-    "open",
-    "close",
-    "high",
-    "low",
+    "isin",
+    "registryclosedate",
     "value",
-    "volume",
-    "begin",
-    "end"
+    "currencyid"
 )
 
-
-def localize_datetime(stamp: str) -> datetime:
-    stamp_datetime = datetime.strptime(stamp, '%Y-%m-%d %H:%M:%S')
-    return MOSCOW_TZ.localize(stamp_datetime).astimezone(UTC_TZ)
-
-
 def parse_candles_data(record: dict) -> list:
-    record['open'] = float(record['open'])
-    record['high'] = float(record['high'])
-    record['low'] = float(record['low'])
-    record['close'] = float(record['close'])
-    record['begin'] = localize_datetime(record['begin'])
-    record['end'] = localize_datetime(record['end'])
-
+    record['value'] = float(record['value'])
+    record['registryclosedate'] = localize_date(record['registryclosedate'])
     return [record[col] for col in COLUMNS]
 
 
-def fetch_moex_candles(security: str, start_date: str, end_date: str) -> list[dict] | None:
+def fetch_moex_dividends(security: str) -> list[dict] | None:
     global COLUMNS
     resp = requests.get(
-        f"https://iss.moex.com/iss/engines/stock/markets/shares/securities/{security}/candles.json"
-        , params = {
-            "interval": 24,
-            "from": start_date,
-            "till": end_date,
-            "iss.meta": "off"
-        })
+        f"https://iss.moex.com/iss/securities/{security}/dividends.json")
     
     if not resp.ok:
-        print(f"Failed to fetch candles for {security}")
+        print(f"Failed to fetch dividends for {security}")
         return None
 
     data = resp.json()
-    rows = data["candles"]["data"]
-    data = [parse_candles_data(dict(zip(COLUMNS, [security] + row))) for row in rows]
+    rows = data["dividends"]["data"]
+    columns = data["dividends"]["columns"]
 
-    return data, COLUMNS
+    if len(rows):
+        rows = [parse_candles_data(dict(zip(columns, row))) for row in rows]
+
+    return rows, COLUMNS
