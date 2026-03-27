@@ -1,6 +1,47 @@
 # dbt + ClickHouse setup
 
-This repository contains a minimal scaffold to run dbt against a local ClickHouse instance.
+```
+┌────────────┐
+│   MOEX     │  ← external source
+└────┬───────┘
+     │
+     ▼
+┌────────────────┐
+│   Airflow DAGs │  ← orchestrates ETL/ELT
+└────┬───────────┘
+     │
+     ▼
+┌────────────────────────────┐
+│   ClickHouse (Bronze)      │  ← raw tables, e.g. moex_raw
+└────┬───────────────────────┘
+     │
+     ▼
+┌────────────────────────────┐
+│   dbt models (Silver)      │  ← cleaned, deduplicated, business‑keyed
+└────┬───────────────────────┘
+     │
+     ▼
+┌────────────────────────────┐
+│   dbt models (Gold)        │  ← aggregated by day, asset, etc.
+└────┬───────────────────────┘
+     │
+     ▼
+┌────────────────────────────┐
+│   Metabase (Dashboards)    │  ← BI layer on ClickHouse
+└────────────────────────────┘
+```
+
+
+
+
+| Metric         | Key SQL Join/Agg                    | Use Case       | Target Threshold |
+| -------------- | ----------------------------------- | -------------- | ---------------- |
+| Dividend Yield | dividends.value / market_data.close | Income ranking | >4%              |
+| Volatility     | STDDEV(log returns)                 | Risk filter    | <25% ann.        |
+| TSR            | Price Δ + dividends                 | Performance    | >10% 1Y          |
+| ADTV           | AVG(volume)                         | Liquidity      | >1M/day          |
+| Div Growth     | LAG(sum value)                      | Sustainability | >5% CAGR         |
+
 
 Quick steps
 

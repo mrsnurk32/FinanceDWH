@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+# System deps (optional but useful)
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install dbt + ClickHouse adapter
+RUN pip install --no-cache-dir dbt-clickhouse
+
+WORKDIR /usr/app
+
+CMD ["tail", "-f", "/dev/null"]

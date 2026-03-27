@@ -1,0 +1,114 @@
+version: 2
+
+models:
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # MARKET DATA - Main table
+  # ══════════════════════════════════════════════════════════════════════════════
+  - name: stg_moex__market_data
+    description: |
+      MOEX OHLC market data (candlestick data) sourced from source.market_data
+
+    columns:
+      - name: secid
+        description: "Security identifier (ticker)"
+      - name: open
+        description: "Opening price for the interval"
+      - name: close
+        description: "Closing price for the interval"
+      - name: high
+        description: "Highest price during the interval"
+      - name: low
+        description: "Lowest price during the interval"
+      - name: value
+        description: "Total traded value"
+      - name: volume
+        description: "Total traded volume (number of units)"
+      - name: begin
+        description: "Start timestamp of the interval (Europe/Moscow timezone)"
+      - name: end
+        description: "End timestamp of the interval (Europe/Moscow timezone)"
+
+  - name: dividends
+    description: "Source dividends data from ClickHouse; ReplacingMergeTree on secid, registryclosedate, value"
+    columns:
+      - name: secid
+        description: "Security identifier"
+        tests:
+          - not_null
+      - name: isin
+        description: "ISIN code"
+        tests:
+          - not_null
+      - name: registryclosedate
+        description: "Registry close date (Moscow timezone)"
+      - name: value
+        description: "Dividend value"
+      - name: currencyid
+        description: "Currency identifier"
+      - name: version
+        description: "Version timestamp for ReplacingMergeTree deduplication"
+
+  - name: securities
+    description: "Source securities metadata from ClickHouse ReplacingMergeTree(version) on secid"
+    columns:
+      - name: secid
+        description: "Security identifier"
+        tests:
+          - not_null
+      - name: boardid
+        description: "Board identifier"
+      - name: shortname
+        description: "Short security name"
+      - name: prevprice
+        description: "Previous price"
+      - name: lotsize
+        description: "Lot size"
+      - name: facevalue
+        description: "Face value per unit"
+      - name: status
+        description: "Security status"
+      - name: boardname
+        description: "Board name"
+      - name: decimals
+        description: "Number of decimals"
+      - name: secname
+        description: "Security full name"
+      - name: remarks
+        description: "Remarks / notes"
+      - name: marketcode
+        description: "Market code"
+      - name: instrid
+        description: "Instrument ID"
+      - name: sectorid
+        description: "Sector ID"
+      - name: minstep
+        description: "Minimum price step"
+      - name: prevwaprice
+        description: "Previous weighted average price"
+      - name: faceunit
+        description: "Face value unit / currency"
+      - name: prevdate
+        description: "Previous data date"
+      - name: issuesize
+        description: "Issue size"
+      - name: isin
+        description: "ISIN code"
+      - name: latname
+        description: "Latin (English) security name"
+      - name: regnumber
+        description: "Registration number"
+      - name: prevlegalcloseprice
+        description: "Previous legal close price"
+      - name: currencyid
+        description: "Currency identifier"
+      - name: sectype
+        description: "Security type"
+      - name: listlevel
+        description: "Listing level"
+      - name: settledate
+        description: "Settlement date"
+      - name: version
+        description: "Version timestamp for ReplacingMergeTree deduplication"
+        tests:
+          - not_null

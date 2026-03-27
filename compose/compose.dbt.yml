@@ -1,0 +1,20 @@
+services:
+  dbt:
+    build:
+      context: ../dbt
+      dockerfile: dockerfile
+    container_name: dbt
+    depends_on:
+      - clickhouse
+    working_dir: /usr/app/moex_dbt/
+    volumes:
+      - ../dbt:/usr/app/
+    environment:
+      DBT_PROFILES_DIR: /usr/app/moex_dbt/
+      CLICKHOUSE_HOST: ${CLICKHOUSE_HOST:-clickhouse}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-analytics}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-admin}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-NotTh3S4fest}
+
+    networks:
+    - analytics
