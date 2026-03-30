@@ -41,37 +41,37 @@ SELECT
     ) * sqrt(252) AS downside_vol_90d
 
     -- Rolling Mean Return (for Sharpe)
-    , avg(yield) OVER (
+    , avg(adjusted_yield) OVER (
         PARTITION BY secid
         ORDER BY market_data.trading_dt__start
         ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
     ) * 252 AS mean_return_30d
 
-    -- Sharpe Ratio (30D, annualized)
+    -- Sharpe Ratio (252D, annualized)
     , (
-        avg(yield) OVER (
+        avg(adjusted_yield) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
-            ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
+            ROWS BETWEEN 252 PRECEDING AND CURRENT ROW
         )
         /
-        stddevSamp(yield) OVER (
+        stddevSamp(adjusted_yield) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
-            ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
+            ROWS BETWEEN 252 PRECEDING AND CURRENT ROW
         )
     ) * sqrt(252) AS sharpe_30d
 
     -- Sortino Ratio (30D)
     , (
-        avg(yield) OVER (
+        avg(adjusted_yield) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
             ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
         )
         /
         stddevSamp(
-            if(yield < 0, yield, NULL)
+            if(adjusted_yield < 0, adjusted_yield, NULL)
         ) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
