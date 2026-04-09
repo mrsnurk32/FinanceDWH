@@ -7,6 +7,9 @@
 SELECT
     assumeNotNull(market_data.secid) AS secid
     , assumeNotNull(market_data.trading_dt__start) AS trading_dt__start
+    , market_data.adjusted_yield AS adjusted_yield
+    , market_data.annual_rate AS annual_rate
+    , market_data.annualized_dividends__cumm_sum AS annualized_dividends__cumm_sum
 
     -- 30D Volatility (annualized)
     , stddevSamp(yield) OVER (
@@ -41,21 +44,40 @@ SELECT
     ) * sqrt(252) AS downside_vol_90d
 
     -- Rolling Mean Return (for Sharpe)
-    , avg(adjusted_yield) OVER (
+    , avg(market_data.adjusted_yield) OVER (
         PARTITION BY secid
         ORDER BY market_data.trading_dt__start
         ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
     ) * 252 AS mean_return_30d
 
+    , avg(market_data.adjusted_yield) OVER (
+        PARTITION BY secid
+        ORDER BY market_data.trading_dt__start
+        ROWS BETWEEN 252 PRECEDING AND CURRENT ROW
+    ) * 252 AS expeted_annual_yeild
+
+    , stddevSamp(market_data.adjusted_yield) OVER (
+            PARTITION BY secid
+            ORDER BY market_data.trading_dt__start
+            ROWS BETWEEN 252 PRECEDING AND CURRENT ROW
+        ) AS std_annualized
+
+    , CASE WHEN market_data.annual_rate > 0
+        THEN 
+            market_data.annualized_dividends__cumm_sum / 
+                ( market_data.annual_rate - std_annualized ) 
+        ELSE NULL
+    END AS fair_value_estimate
+    -- , market_data.close * (1 + alpha) AS fair_value_estimate
     -- Sharpe Ratio (252D, annualized)
     , (
-        avg(adjusted_yield) OVER (
+        avg(risk_free_adjusted_yield) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
             ROWS BETWEEN 252 PRECEDING AND CURRENT ROW
         )
         /
-        stddevSamp(adjusted_yield) OVER (
+        stddevSamp(risk_free_adjusted_yield) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
             ROWS BETWEEN 252 PRECEDING AND CURRENT ROW
@@ -64,14 +86,14 @@ SELECT
 
     -- Sortino Ratio (30D)
     , (
-        avg(adjusted_yield) OVER (
+        avg(market_data.adjusted_yield) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
             ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
         )
         /
         stddevSamp(
-            if(adjusted_yield < 0, adjusted_yield, NULL)
+            if(market_data.adjusted_yield < 0, market_data.adjusted_yield, NULL)
         ) OVER (
             PARTITION BY secid
             ORDER BY market_data.trading_dt__start
@@ -81,4 +103,4 @@ SELECT
     
 
 FROM
-    {{ ref('int_market_data') }} AS market_data
+    {{ ref('int_returns') }} AS market_data
