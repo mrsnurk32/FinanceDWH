@@ -51,4 +51,4 @@ SELECT
     ) - 1 AS mom_12m_ex_1m
 
 FROM
-    {{ ref('int_market_data') }} AS market_data
+    {{ ref('int_returns') }} AS market_data

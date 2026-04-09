@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: centralbank_rates_ru
+    description: "Central Bank of Russia periodic deposit / risk‑free rates."
+
+    columns:
+      - name: periodicity
+        description: "Frequency of the rate observation (e.g., 'month')."
+        tests:
+          - not_null
+
+      - name: obs_val
+        description: "Observed rate value (e.g., bank deposit rate)."
+        tests:
+          - not_null
+
+      - name: date
+        description: "Observation date in Moscow time zone."
+        tests:
+          - not_null
+
+      - name: version
+        description: "Row version timestamp for ReplacingMergeTree deduplication."
+        tests:
+          - not_null
